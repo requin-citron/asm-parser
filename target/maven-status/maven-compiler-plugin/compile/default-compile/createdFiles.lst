@@ -1,0 +1,4 @@
+parser/InstructionTradutor.class
+parser/App.class
+parser/ParserFile.class
+parser/FileCompiler.class
