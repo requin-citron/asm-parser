@@ -77,11 +77,28 @@ class InstructionTradutor{
             return 0x1;
     }
   }
-  //process MOV
-  public static byte[] mov(String movline){
-    String[] args = eraseChar(movline, SEPARATOR_TOKEN).split(",");
+  //cas ou on a un entier négatif
+  public static int processNegatif(int input){
+    if(input < 0){
+      int ret = input*-1;
+      if(8191 < ret){
+        System.err.println("Value is to big: "+String.valueOf(input));
+        System.exit(1);
+      }
+      ret = ((~ret)&0x3fff)+1 ;
+      return ret;
+    }
+    if(8191 < input){
+      System.err.println("Value is to big: "+String.valueOf(input));
+      System.exit(1);
+    }
+    return input;
+  }
+  //make instruction with A and B
+  public static byte[] makeInstruction(int opcode, String line){
+    String[] args = eraseChar(line, SEPARATOR_TOKEN).split(",");
     if(args.length != 2){ // catch error
-        System.err.println("Syntax Error: "+ movline);
+        System.err.println("Syntax Error: "+ line);
         System.exit(1);
     }
     String tokenA = args[0];
@@ -95,55 +112,40 @@ class InstructionTradutor{
     if(tokenBaddr != 0x1){ //trim symbol
         tokenB = tokenB.substring(1,tokenB.length());
     }
+
     int a = Integer.parseInt(tokenA);
     int b = Integer.parseInt(tokenB);
-
+    //check pour le moins
+    if(tokenAaddr != 0x1){
+      a = InstructionTradutor.processNegatif(a);
+    }
+    if(tokenBaddr != 0x1){
+      b = InstructionTradutor.processNegatif(b);
+    }
     byte[] array = new byte[5];
-    array[0] = (byte)((0x01<<4) + tokenAaddr);
+    array[0] = (byte)((opcode<<4) | tokenAaddr);
     array[1] = (byte)((tokenBaddr << 4) | (a&0x3c00)>>10);
     array[2] = (byte)((a&0x3fc) >> 2);
     array[3] = (byte)(((a&0x3) << 6) | ((b&0x3f00)>>8));
     array[4] = (byte)(b&0xff);
     return array;
   }
-  //process ADD
-  public static byte[] add(String addline){
-    byte[] array = new byte[] {(byte)0x91};
-    return array;
-  }
-  //process SUB
-  public static byte[] sub(String subline){
-    byte[] array = new byte[] {(byte)0x92};
-    return array;
-  }
-  //process JMP
-  public static byte[] jmp(String subline){
-    byte[] array = new byte[] {(byte)0x93};
-    return array;
-  }
-  //process JMZ
-  public static byte[] jmz(String subline){
-    byte[] array = new byte[] {(byte)0x94};
-    return array;
-  }
-  //process JMG
-  public static byte[] jmg(String subline){
-    byte[] array = new byte[] {(byte)0x95};
-    return array;
-  }
-  //process DJZ
-  public static byte[] djz(String subline){
-    byte[] array = new byte[] {(byte)0x96};
-    return array;
-  }
-  //process CMP
-  public static byte[] cmp(String subline){
-    byte[] array = new byte[] {(byte)0x97};
-    return array;
-  }
-  //process DAT
-  public static byte[] dat(String subline){
-    byte[] array = new byte[] {(byte)0x98};
+  //make instruction just with A
+  public static byte[] makeInstructionOne(int opcode, String line){
+    String tokenA = eraseChar(line, SEPARATOR_TOKEN);
+    int tokenAaddr = InstructionTradutor.getAddrMode(tokenA);
+    if(tokenAaddr != 0x1){ //trim symbol
+        tokenA = tokenA.substring(1,tokenA.length());
+    }
+    int a = Integer.parseInt(tokenA);
+    //check pour le moins
+    if(tokenAaddr != 0x1){
+      a = InstructionTradutor.processNegatif(a);
+    }
+    byte[] array = new byte[3];
+    array[0] = (byte)((opcode<<4) | tokenAaddr);
+    array[1] = (byte)(a&0x3fc0);
+    array[2] = (byte)(a&0x3f);
     return array;
   }
   //fonction principale de la traduction
@@ -158,23 +160,23 @@ class InstructionTradutor{
     String opCode =  sanitizeLine.substring(0, opCodeDelimiter).toUpperCase();
     String body = sanitizeLine.substring(opCodeDelimiter+1, sanitizeLine.length());
     if(opCode.equals(InstructionTradutor.instructionSet[0])){       // MOV
-        return mov(body);
+        return makeInstruction(0x1, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[1])){ // ADD
-        return add(body);
+        return makeInstruction(0x2, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[2])){ //SUB
-        return sub(body);
+        return makeInstruction(0x3, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[3])){ // JMP
-        return jmp(body);
+        return makeInstructionOne(0x4, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[4])){ // JMZ
-        return jmz(body);
+        return makeInstruction(0x5, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[5])){ // JMG
-        return jmg(body);
+        return makeInstruction(0x6, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[6])){ // DJZ
-        return djz(body);
+        return makeInstruction(0x7, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[7])){ // CMP
-        return cmp(body);
+        return makeInstruction(0x8, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[8])){ // DAT
-        return dat(body);
+        return makeInstructionOne(0x0, body);
     }else{
       System.err.println("Unknown op code: "+ opCode);
       System.exit(1);
