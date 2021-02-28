@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 /*
-la taille max d'un opcode est 40bits soit 9 bytes
+la taille max d'un opcode est 40bits soit 5 bytes
 la conversion text "binaire" ce passe comme suit:
 4 bit d'instruction:
 4 bits de mode d'addressage A;
@@ -56,9 +56,54 @@ class InstructionTradutor{
     if(input.charAt(i)==aim) return i;
     return -1;
   }
+  //supprimer tout les Character d'une chaine
+  public static String eraseChar(String input, Character aim){
+    String output = new String("");
+    for(int i=0; i<input.length(); i++){
+      if(input.charAt(i) != aim) output += input.charAt(i);
+    }
+    return output;
+
+  }
+  //retourn le mode d'addressage
+  public static int getAddrMode(String input){
+    assert(input.length() > 0);
+    switch (input.charAt(0)) {
+          case '#':
+            return 0x0;
+          case '@':
+            return 0x2;
+          default: // cas ou il n'y a pas de symbol
+            return 0x1;
+    }
+  }
   //process MOV
   public static byte[] mov(String movline){
-    byte[] array = new byte[] {(byte)0x90};
+    String[] args = eraseChar(movline, SEPARATOR_TOKEN).split(",");
+    if(args.length != 2){ // catch error
+        System.err.println("Syntax Error: "+ movline);
+        System.exit(1);
+    }
+    String tokenA = args[0];
+    String tokenB = args[1];
+    int tokenAaddr = InstructionTradutor.getAddrMode(tokenA);
+    if(tokenAaddr != 0x1){ //trim symbol
+        tokenA = tokenA.substring(1,tokenA.length());
+    }
+
+    int tokenBaddr = InstructionTradutor.getAddrMode(tokenB);
+    if(tokenBaddr != 0x1){ //trim symbol
+        tokenB = tokenB.substring(1,tokenB.length());
+    }
+    int a = Integer.parseInt(tokenA);
+    int b = Integer.parseInt(tokenB);
+
+    byte[] array = new byte[5];
+    array[0] = (byte)((0x01<<4) + tokenAaddr);
+    array[1] = (byte)((tokenBaddr << 4) | (a&0x3c00)>>10);
+    array[2] = (byte)((a&0x3fc) >> 2);
+    array[3] = (byte)(((a&0x3) << 6) | ((b&0x3f00)>>8));
+    array[4] = (byte)(b&0xff);
     return array;
   }
   //process ADD
@@ -111,24 +156,25 @@ class InstructionTradutor{
       System.exit(1);// return error
     }
     String opCode =  sanitizeLine.substring(0, opCodeDelimiter).toUpperCase();
+    String body = sanitizeLine.substring(opCodeDelimiter+1, sanitizeLine.length());
     if(opCode.equals(InstructionTradutor.instructionSet[0])){       // MOV
-        return mov(sanitizeLine);
+        return mov(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[1])){ // ADD
-        return add(sanitizeLine);
+        return add(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[2])){ //SUB
-        return sub(sanitizeLine);
+        return sub(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[3])){ // JMP
-        return jmp(sanitizeLine);
+        return jmp(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[4])){ // JMZ
-        return jmz(sanitizeLine);
+        return jmz(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[5])){ // JMG
-        return jmg(sanitizeLine);
+        return jmg(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[6])){ // DJZ
-        return djz(sanitizeLine);
+        return djz(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[7])){ // CMP
-        return cmp(sanitizeLine);
+        return cmp(body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[8])){ // DAT
-        return dat(sanitizeLine);
+        return dat(body);
     }else{
       System.err.println("Unknown op code: "+ opCode);
       System.exit(1);

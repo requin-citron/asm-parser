@@ -19,7 +19,6 @@ public class App
           buffer = InstructionTradutor.in(line);
           if(buffer != null){
             output.writeInstruction(buffer);
-            System.out.println(line);
           }
           line = parser.readLine();
 
