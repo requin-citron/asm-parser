@@ -29,9 +29,9 @@ class InstructionTradutor{
     "JMG", // 6: transfere l'execution a l'addresse A si le contenue de l'addresse B > 0
     "DJZ", // 7: retranche 1 du contenue de l'addresse B et saute a A si le result ==0
     "CMP", // 8: compare le contenue de l'addresse A et le contenue de l'addresse B si ils sont different sauté a l'instruction suivante
-    "DAT" // 0: valeur non executable B est la valeur de la donnée
+    "DAT", // 0: valeur non executable B est la valeur de la donnée
+    "SPL"  // 9: fork opcode
   };
-  //private const int instructionLength = 9;
   //input sanitization
   public static  String sanitize(String input){
     if(input.equals("")) return "";
@@ -138,13 +138,10 @@ class InstructionTradutor{
         tokenA = tokenA.substring(1,tokenA.length());
     }
     int a = Integer.parseInt(tokenA);
-    //check pour le moins
-    if(tokenAaddr != 0x1){
-      a = InstructionTradutor.processNegatif(a);
-    }
+    a = InstructionTradutor.processNegatif(a);
     byte[] array = new byte[3];
     array[0] = (byte)((opcode<<4) | tokenAaddr);
-    array[1] = (byte)(a&0x3fc0);
+    array[1] = (byte)(a>>6);
     array[2] = (byte)(a&0x3f);
     return array;
   }
@@ -177,6 +174,8 @@ class InstructionTradutor{
         return makeInstruction(0x8, body);
     }else if(opCode.equals(InstructionTradutor.instructionSet[8])){ // DAT
         return makeInstructionOne(0x0, body);
+    }else if(opCode.equals(InstructionTradutor.instructionSet[9])){ // SPL
+        return makeInstructionOne(0x9, body);
     }else{
       System.err.println("Unknown op code: "+ opCode);
       System.exit(1);

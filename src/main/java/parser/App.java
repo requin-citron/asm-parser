@@ -8,10 +8,15 @@ public class App
 {
     public static void main( String[] args )
     {
-        String path = "/home/poney/script/java/info4B/asm-parser/src/test/files/";
-        String pathRead = path+"test.txt";
-        String pathWrite = path + "test.cor";
-        ParserFile parser = new ParserFile(pathRead);
+        if(args.length < 1){
+          System.out.println("Usage: file_name.jar file.red");
+          System.exit(1);
+        }
+
+        String path = args[0];
+        System.out.println("Processing: "+path);
+        String pathWrite = "./" + "out.cor";
+        ParserFile parser = new ParserFile(path);
         FileCompiler output = new FileCompiler(pathWrite);
         String line = parser.readLine();
         byte[] buffer;
