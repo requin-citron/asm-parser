@@ -1,0 +1,11 @@
+add #2, @2
+jmp 2
+dat 2
+jmp 3
+dat 9
+dat 2
+cmp -1, #2
+jmp -1
+spl 1
+jmp -1
+dat -6

@@ -1,33 +1,44 @@
 package parser;
+import org.apache.commons.cli.*;
 
-/**
- * Hello world!
- *
- */
+
 public class App
 {
-    public static void main( String[] args )
+    public static void main( String[] args ) throws Exception
     {
-        if(args.length < 2){
-          System.out.println("Usage: file_name.jar file.red ouput");
-          System.exit(1);
-        }
-
-        String path = args[0];
+      Options options = new Options();
+      options.addOption("i", "input", true, "Input file");
+      options.addOption("o", "output", true, "Output file");
+      options.addOption("h", "help", false, "Show help");
+      CommandLineParser parser  = new DefaultParser();
+      CommandLine cmd = parser.parse(options, args);
+      boolean flag = false;
+      if(!cmd.hasOption("i")){
+        flag = true;
+      }
+      if(!cmd.hasOption("o")){
+        flag = true;
+      }
+      if(cmd.hasOption("h") || flag){
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("asm-parser", options);
+        System.exit(0);
+      }
+        String path = cmd.getOptionValue("i");
         System.out.println("Processing: "+path);
-        String pathWrite = args[1];
-        ParserFile parser = new ParserFile(path);
+        String pathWrite = cmd.getOptionValue("o");
+        ParserFile parserF = new ParserFile(path);
         FileCompiler output = new FileCompiler(pathWrite);
-        String line = parser.readLine();
+        String line = parserF.readLine();
         byte[] buffer;
         while (line != null) {
           buffer = InstructionTradutor.in(line);
           if(buffer != null){
             output.writeInstruction(buffer);
           }
-          line = parser.readLine();
+          line = parserF.readLine();
 
         }
-        parser.close();
+        parserF.close();
     }
 }

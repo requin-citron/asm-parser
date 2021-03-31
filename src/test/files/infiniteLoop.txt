@@ -1,0 +1,4 @@
+jmp 2
+dat 10
+add #1 , -1
+jmp -1
